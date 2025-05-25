@@ -45,11 +45,15 @@ async function hit() {
     displayCards();
 
     let playerTotal = calculateHandTotal(playerHand);
+
+    // 카드 합이 21을 넘으면 더 이상 카드를 뽑지 않음
     if (playerTotal > 21) {
         alert('플레이어가 패배했습니다. 카드 합이 21을 초과했습니다.');
         resetGame();
+        return; // 여기서 게임을 끝내도록 return 추가
     }
 }
+
 
 // 스탠드
 async function stand() {
