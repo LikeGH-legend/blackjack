@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>블랙잭 게임</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>블랙잭 게임</h1>
+    <div id="gameArea">
+        <div id="dealer">
+            <h2>딜러</h2>
+            <div id="dealerCards"></div>
+        </div>
+        <div id="player">
+            <h2>플레이어</h2>
+            <div id="playerCards"></div>
+        </div>
+        <div>
+            <button id="startBtn">게임 시작</button>
+            <button id="hitBtn" style="display: none;">히트</button>
+            <button id="standBtn" style="display: none;">스탠드</button>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
