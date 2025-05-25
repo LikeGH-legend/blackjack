@@ -1,106 +1,35 @@
-// 카드 덱, 플레이어와 딜러 손, 카드 카운팅 변수
-let deck = [];
+let deckId = "";
 let playerHand = [];
 let dealerHand = [];
 let count = 0;  // 카드 카운팅 점수
 
-const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
-const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-
 // 카드 덱 생성 함수
-function createDeck() {
-    deck = [];
-    for (let suit of suits) {
-        for (let rank of ranks) {
-            deck.push({ suit: suit, rank: rank });
-        }
-    }
-    shuffleDeck();
-}
-
-// 덱 섞기
-function shuffleDeck() {
-    for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]];
-    }
-}
-
-// 카드 값 계산 (Hi-Lo 시스템)
-function cardValue(card) {
-    if (['2', '3', '4', '5', '6'].includes(card.rank)) return 1;
-    if (['10', 'J', 'Q', 'K', 'A'].includes(card.rank)) return -1;
-    return 0;
+async function createDeck() {
+    const response = await fetch("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1");
+    const data = await response.json();
+    deckId = data.deck_id;  // 덱 ID 저장
+    console.log("덱 ID: ", deckId);
 }
 
 // 카드 뽑기
-function drawCard() {
-    const card = deck.pop();
-    updateCount(card); // 카드가 뽑힐 때마다 카운트 업데이트
-    return card;
+async function drawCard() {
+    const response = await fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=1`);
+    const data = await response.json();
+    return data.cards[0];  // 뽑은 카드 반환
 }
 
-// 카운팅 업데이트
-function updateCount(card) {
-    count += cardValue(card);
-}
-
-// 카드 합 계산
-function calculateHandTotal(hand) {
-    let total = 0;
-    let aceCount = 0;
-
-    // 카드 합 계산
-    for (let card of hand) {
-        if (['J', 'Q', 'K'].includes(card.rank)) {
-            total += 10;
-        } else if (card.rank === 'A') {
-            aceCount++;
-            total += 11;
-        } else {
-            total += parseInt(card.rank);
-        }
-    }
-
-    // Ace가 11이면 1로 변경해야 할 경우 처리
-    while (total > 21 && aceCount > 0) {
-        total -= 10;
-        aceCount--;
-    }
-
-    return total;
-}
-
-// 카드 표시
+// 카드 이미지 표시
 function displayCards() {
-    document.getElementById('playerCards').innerHTML = playerHand.map(card => `<div class="card" style="background-image: url('cards/${card.rank}_of_${card.suit}.png')"></div>`).join('');
-    document.getElementById('dealerCards').innerHTML = dealerHand.map(card => `<div class="card" style="background-image: url('cards/${card.rank}_of_${card.suit}.png')"></div>`).join('');
-}
-
-// 딜러의 행동 결정 (카드 카운팅 및 블랙잭 규칙)
-function dealerAction() {
-    let dealerTotal = calculateHandTotal(dealerHand);
-
-    // 카드 카운팅에 따른 전략 적용
-    if (dealerTotal < 17 || count > 0) {
-        dealerHand.push(drawCard());
-        displayCards();
-        dealerTotal = calculateHandTotal(dealerHand);
-        if (dealerTotal >= 17) {
-            stand(); // 카드 합이 17 이상이면 스탠드
-        } else {
-            dealerAction(); // 계속해서 히트
-        }
-    } else {
-        stand(); // 카드 합이 17 이상이면 스탠드
-    }
+    // 플레이어와 딜러 카드 표시
+    document.getElementById('playerCards').innerHTML = playerHand.map(card => `<div class="card" style="background-image: url('${card.image}')"></div>`).join('');
+    document.getElementById('dealerCards').innerHTML = dealerHand.map(card => `<div class="card" style="background-image: url('${card.image}')"></div>`).join('');
 }
 
 // 게임 시작
-function startGame() {
-    createDeck();
-    playerHand = [drawCard(), drawCard()];
-    dealerHand = [drawCard(), drawCard()];
+async function startGame() {
+    await createDeck();  // 덱 생성
+    playerHand = [await drawCard(), await drawCard()];
+    dealerHand = [await drawCard(), await drawCard()];
     displayCards();
 
     // 시작 버튼 숨기기
@@ -110,9 +39,11 @@ function startGame() {
 }
 
 // 히트
-function hit() {
-    playerHand.push(drawCard());
+async function hit() {
+    const card = await drawCard();
+    playerHand.push(card);
     displayCards();
+
     let playerTotal = calculateHandTotal(playerHand);
     if (playerTotal > 21) {
         alert('플레이어가 패배했습니다. 카드 합이 21을 초과했습니다.');
@@ -121,12 +52,12 @@ function hit() {
 }
 
 // 스탠드
-function stand() {
+async function stand() {
     let playerTotal = calculateHandTotal(playerHand);
     let dealerTotal = calculateHandTotal(dealerHand);
 
     while (dealerTotal < 17) {
-        dealerHand.push(drawCard());
+        dealerHand.push(await drawCard());
         dealerTotal = calculateHandTotal(dealerHand);
     }
 
@@ -143,6 +74,32 @@ function stand() {
     }
 
     resetGame();
+}
+
+// 카드 합 계산
+function calculateHandTotal(hand) {
+    let total = 0;
+    let aceCount = 0;
+
+    // 카드 합 계산
+    for (let card of hand) {
+        if (['J', 'Q', 'K'].includes(card.value)) {
+            total += 10;
+        } else if (card.value === 'A') {
+            aceCount++;
+            total += 11;
+        } else {
+            total += parseInt(card.value);
+        }
+    }
+
+    // Ace가 11이면 1로 변경해야 할 경우 처리
+    while (total > 21 && aceCount > 0) {
+        total -= 10;
+        aceCount--;
+    }
+
+    return total;
 }
 
 // 게임 리셋
